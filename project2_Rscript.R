@@ -212,9 +212,9 @@ colnames(Sph_6) <- colnames(Sph[,2:7])
 
 setwd("~/Desktop/MICB_405/Project2/PathView")
 pv.out <- pathview(gene.data = Rho_6[,1:6], 
-                   pathway.id = "00680", 
+                   pathway.id = "01100", 
                    species="ko",  
-                   out.suffix = "Rho.data",
+                   out.suffix = "Rho",
                    multi.state=T,
                    same.layer =T,
                    limit = list(gene = c(0,50)),
@@ -266,7 +266,7 @@ N_cycle_cruise_dotplot <- N_cycle_cruise %>%
   scale_y_discrete(name ="Cruises")+
   facet_wrap(~Class, scales="free_y", nrow = 4) +
   theme(legend.text = element_text(size=8), 
-        axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.text.x = element_text(angle = 90, hjust = 1,size=8),
         legend.position ="none") 
 
 #Separate Cruise to Class and Cruise ID in separate columns, filtered to keep only data with KEGG ID in Sulfur Metabolism 00920
@@ -288,12 +288,36 @@ S_cycle_cruise_dotplot <- S_cycle_cruise %>%
   scale_y_discrete(name ="Cruises")+
   facet_wrap(~Class, scales="free_y", nrow = 4) +
   theme(legend.text = element_text(size=8), 
-        axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.text.x = element_text(angle = 90, hjust = 1,size=8),
+        legend.position = "none") 
+
+#Separate Cruise to Class and Cruise ID in separate columns, filtered to keep only data with KEGG ID in Sulfur Metabolism 00920
+M_cycle_cruise <- gather(mega_cycle, key="Cruise",value="RPKM",-KEGG) %>%
+  mutate(Class = substring(Cruise, 1,3)) %>%
+  mutate(Cruise=substring(Cruise,5)) %>%
+  dplyr::filter( KEGG %in% (KO_log$`00910`[167:346]))
+#Generate new Gene column, prefilled with NA
+M_cycle_cruise$Gene = "NA"
+#Add Gene ID to dataset corresponding to KEGG ID
+for (x in 1:length(M_cycle_cruise$KEGG)) {
+  M_cycle_cruise$Gene[x]=KO_log$Nitrogen_1[M_cycle_cruise$KEGG[x]==(KO_log$`00910`[167:346])]
+}
+#Plot Genes with RPKM bubble plot of Sulfur Metabolism Pathway 
+M_cycle_cruise_dotplot <- M_cycle_cruise %>%
+  ggplot (aes(x=Gene, y= Cruise, color = Class, size = RPKM)) +
+  geom_point () +
+  scale_x_discrete(name ="Expressed Genes")+
+  scale_y_discrete(name ="Cruises")+
+  facet_wrap(~Class, scales="free_y", nrow = 4) +
+  theme(legend.text = element_text(size=8), 
+        axis.text.x = element_text(angle = 90, hjust = 1,size=8),
         legend.position = "right") 
 
 #Combine bubble plots of Nitrogen and Sulfur Metabolism Pathway
-CruisevsGenes<-plot_grid(N_cycle_cruise_dotplot, S_cycle_cruise_dotplot, labels=c("A", "B"), 
-                         align="h", axis="tb", rel_widths=c(2/5, 3/5))
+CruisevsGenes<-plot_grid(N_cycle_cruise_dotplot, 
+                         S_cycle_cruise_dotplot,
+                         M_cycle_cruise_dotplot, labels=c("A", "B", "C"), 
+                         align="h", axis="tb", ncol = 3,rel_widths=c(2/8,3/8, 3/8))
 CruisevsGenes
 
 #testing:
